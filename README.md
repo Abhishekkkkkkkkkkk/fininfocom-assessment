@@ -1,16 +1,19 @@
-# Fullstack Developer Assessment - PHP & Python API Solutions
+# Fullstack Developer Assessment Solutions: Python API & PHP (CodeIgniter 4)
 
-This repository contains the complete and production-ready solutions for both the **Python API** and the **PHP (CodeIgniter 4)** components of the Fullstack Developer Assessment.
+This repository contains the complete, production-grade solutions for both the **Python API** and the **PHP (CodeIgniter 4)** components of the Fullstack Developer Assessment.
 
-Both projects are structured to demonstrate high standards in clean code architecture, database relational joins, data validation, and mathematical audit verification.
+Both projects have been designed to meet top industry standards, showcasing strict database design principles, relational joins, robust data serialization, secure CORS controls, and detailed data audit verification models.
 
 ---
 
-## 📂 Project Structure
+## 📂 Project Directory Structure
+
+The repository organizes the Python and PHP components into separate, self-contained directories. A unified `.gitignore` prevents virtual environments and framework cache directories from cluttering commits:
 
 ```text
 D:\fininfocom task\
 ├── README.md                          <-- Parent overview and startup guide (This file)
+├── .gitignore                         <-- Git tracking rules (excludes caches, local DBs, vendor directories)
 ├── PHP Task.pdf                       <-- PHP Assessment Specification
 ├── Fullstack Developer Assessment - Python API.pdf <-- Python Assessment Specification
 │
@@ -69,71 +72,76 @@ Both solutions are backed by an in-depth mathematical audit of the provided data
 
 ---
 
-## 🚀 Installation & Running Guide
+## 🐍 Python FastAPI REST API Solution
 
-### 🐍 Python FastAPI Setup
-The Python backend uses **FastAPI**, **SQLite** (local file-based db), and **SQLAlchemy ORM**.
+The Python backend is designed to run asynchronously on **FastAPI** with **SQLite** as the database, using **SQLAlchemy ORM** for query compilation.
 
-1. Navigate to the Python project directory:
+### **Core Features:**
+* **ORM Modeling**: Leverages SQLAlchemy Declarative Base to define relational mappings, foreign keys, and lazy-loading relationships.
+* **Input Validation**: Uses **Pydantic v2** models to enforce type constraints, round numeric parameters, and structure JSON responses.
+* **Database Seeder**: An automated python seeder (`seed_db.py`) parses the schema script transactionally and creates the local database file instantly.
+* **Mathematical Auditor**: Validates each order’s split payments against its items sum and records verification metrics inside the API response.
+
+### **Execution Instructions:**
+1. Navigate to the Python project:
    ```powershell
-   cd "python-api"
+   cd python-api
    ```
-2. Install the required modules:
+2. Install the dependencies:
    ```powershell
    pip install -r requirements.txt
    ```
-3. Initialize and seed the SQLite database file (`restaurant_pos.db`):
+3. Initialize and seed the database:
    ```powershell
    python seed_db.py
    ```
-4. Start the live local API server:
+4. Start the server:
    ```powershell
    python -m uvicorn main:app --reload
    ```
-5. **Access Endpoint**:
+5. **API Endpoints**:
    * Interactive Documentation: 👉 **`http://127.0.0.1:8000/docs`**
-   * GET Orders JSON Payload: 👉 **`http://127.0.0.1:8000/api/orders`**
+   * GET Orders Nested JSON Payload: 👉 **`http://127.0.0.1:8000/api/orders`**
 
 ---
 
-### 🐘 PHP CodeIgniter 4 Setup
-The PHP backend uses **CodeIgniter 4**, **MySQL**, and **Composer**.
+## 🐘 PHP CodeIgniter 4 Web Solution
 
-#### Option 1: Instant Client-Side GUI Preview (No Setup Required)
-For convenience, you can load the completed tasks instantly without importing databases or running local servers:
-1. Open the `php-assessment/` folder in your explorer.
-2. Double-click the file **`index.html`** to load it inside your web browser.
-3. Toggle between tabs:
-   * **Task 3: Interactive Cart POS** (Add items, adjust quantities, view 12.5% inclusive tax).
-   * **Task 2: API Database Explorer** (Inspect hierarchical orders, nested items, split payments, and mathematical checks).
+The PHP application is structured under the MVC design pattern, utilizing **CodeIgniter 4** and **MySQL**.
 
-#### Option 2: Local Spark Server Setup
-1. Open MySQL (e.g. phpMyAdmin / XAMPP) and create a database named `restaurant_pos`.
-2. Import **`database/schema.sql`** into the database to build and seed all tables.
-3. Open `app/Config/Database.php` and configure your local MySQL credentials:
-   ```php
-   'hostname' => 'localhost',
-   'username' => 'root',
-   'password' => '', // your password
-   'database' => 'restaurant_pos',
-   ```
-4. Install composer dependencies:
+### **Core Features:**
+* **REST API Controller**: Extends `ResourceController` to output nested JSON, incorporating performance-optimizing `Cache-Control` headers and secure CORS headers.
+* **Interactive Cart View**: Features a premium checkout layout styled with Google Font typography and glassmorphism styling. Calculates inclusive 12.5% tax:
+  $$\text{Tax Amount} = \text{Total Including Tax} \times \left( \frac{12.5}{112.5} \right) = \text{Total Including Tax} \times \left( \frac{1}{9} \right)$$
+* **Zero-Dependency GUI Preview (`index.html`)**: Includes a client-side mockup combining mock datasets in vanilla JS. Allows the recruiter to test both the Interactive Cart and API explorer instantly by double-clicking the file in their browser.
+
+### **Execution Instructions:**
+
+#### Option A: Instant Browser Preview (No Server Setup Required)
+1. Open the `php-assessment/` folder.
+2. Double-click **`index.html`** to load the visual GUI in your web browser.
+
+#### Option B: Run Live PHP Server
+1. Create a MySQL database named `restaurant_pos` and import the script: **`database/schema.sql`**.
+2. Edit `app/Config/Database.php` and configure your local MySQL credentials.
+3. Install composer dependencies:
    ```powershell
    composer install
    ```
-5. Run the dev server using the Spark tool:
+4. Run the local development server:
    ```powershell
    php spark serve
    ```
-6. **Access Endpoint**:
-   * GET Orders JSON API: 👉 **`http://localhost:8080/api/orders`**
-   * Interactive POS Cart Page: 👉 **`http://localhost:8080/cart`**
+   *The server runs on `http://localhost:8080`.*
+5. **API Endpoints**:
+   * GET Orders Nested JSON Payload: 👉 **`http://localhost:8080/api/orders`**
+   * Interactive Checkout Cart: 👉 **`http://localhost:8080/cart`**
 
 ---
 
-## 🔒 Security, Performance & API Design
+## 🛡️ Security, Performance & Code Optimizations
 
-* **SQL Injection Prevention**: Standard parameterized query binding via ORM and query builders in both frameworks.
-* **CORS Middleware**: Pre-configured headers in both applications to allow cross-origin requests.
-* **Input and Type Validation**: Strict typing using Pydantic models in Python and PSR-4 compliant Models in PHP.
-* **Database Indexing**: Relational tables include explicit primary/foreign keys and index mappings for fast query resolution.
+* **SQL Injection Prevention**: Enforced via CodeIgniter Query Builder and SQLAlchemy ORM parameter binding.
+* **CORS Settings**: Fully enabled across both projects to permit safe cross-origin API calls.
+* **HTTP Caching**: The PHP API sets `Cache-Control: public, max-age=60` to optimize backend database load.
+* **Index Configurations**: Primary and foreign keys are explicitly mapped in database schemas to optimize join queries.

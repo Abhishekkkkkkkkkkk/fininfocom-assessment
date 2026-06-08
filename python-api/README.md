@@ -1,66 +1,98 @@
-# Fullstack Developer Assessment - Python API
-This project provides a comprehensive, production-ready implementation of the Fullstack Restaurant Orders API in Python using **FastAPI** and **SQLAlchemy ORM**.
+# Python FastAPI Restaurant POS Orders API
+
+This project provides a comprehensive, production-grade Python API solution for the **Restaurant POS Orders System** as specified in the Developer Assessment. It leverages **FastAPI** for the web framework, **SQLite** for the local data storage, and **SQLAlchemy ORM** for query compilation and database mapping.
 
 ---
 
-## 📂 Project Directory Structure
+## 🛠️ Technical Stack & Architecture
+
+The application is structured using a standard clean MVC/Layered Architecture:
+* **Web/Routing Layer (`main.py`)**: Defines FastAPI routes, handles CORS middleware policies, redirects index request, and implements exception boundaries.
+* **Service/Query Layer (`crud.py`)**: Directs database joins, aggregates data structures, and evaluates mathematical balance verification formulas.
+* **Validation/Serialization Layer (`schemas.py`)**: Utilizes **Pydantic v2** models to serialize, validate, and parse SQL objects into JSON format with precise type enforcement.
+* **ORM Mapping Layer (`models.py`)**: Uses **SQLAlchemy Declarative Base** to map SQLite tables and relationships.
+* **Database Connection Layer (`database.py`)**: Manages the local SQLite database creation and SessionLocal dependency lifecycle.
+* **Database Seeder (`seed_db.py`)**: A database creator script that parses schema files transactionally.
+
+---
+
+## 📂 Project Directory Structure & Files Breakdown
 
 ```text
 python-api/
 ├── main.py                      <-- FastAPI application router entrypoint
-├── database.py                  <-- SQLAlchemy database configuration & SessionLocal generator
+├── database.py                  <-- SQLAlchemy database configurations & SessionLocal generator
 ├── models.py                    <-- SQLAlchemy ORM models matching database tables
 ├── schemas.py                   <-- Pydantic models for request/response serialization
 ├── crud.py                      <-- Database queries (joins, split payments & validations)
 ├── seed_db.py                   <-- SQLite database creator and auto-seeder utility
 ├── findings.md                  <-- Task 1: Complete Data & Calculations Findings Report
-├── README.md                    <-- Setup guide, API endpoints, and running instructions (This file)
+├── README.md                    <-- Detailed setup, API endpoints, and running instructions (This file)
 ├── requirements.txt             <-- Python package dependencies
 └── database/
     └── schema.sql               <-- Unified database table structures and pre-seeded data SQL
 ```
 
+### 1. `database.py` (Database Engine & Session)
+* Instantiates the database engine using `sqlite:///./restaurant_pos.db`.
+* Implements `check_same_thread=False` to support concurrent, multi-threaded requests inside FastAPI.
+* Exposes `get_db()` as a context manager/dependency that yields a database session and safely closes it upon request completion.
+
+### 2. `models.py` (SQLAlchemy Relational Mapping)
+Defines 5 relational database models:
+* `MenuName`: Matches the `menu_names` table (Menu ID -> Menu Name like Food/Drinks).
+* `Category`: Matches the `categories` table (Cat ID -> Category Name, mapped to Menu Name via ForeignKey).
+* `Menu`: Matches the `menu` table. Stores item sizes and prices as denormalized VARCHAR lists matching raw schema layout.
+* `OrderHistory`: Matches the `order_history` table containing 53 order lines. Stores item sales details (price charged, qty, order status, total cost).
+* `Payment`: Matches the `payments` table containing 17 split payments (amount due, tips, discounts, paid amount, payment type/status).
+
+### 3. `schemas.py` (Pydantic Serialization & Types)
+* `ItemResponse`: Serializes nested order item lines (casts database string fields like price/total to float, maps joined parent category and menu names).
+* `PaymentResponse`: Formats nested payment entries (casts database string fields like tips/discounts/paid amount to float).
+* `VerificationResponse`: Formats audit calculations, providing values for `expected_total_paid`, `actual_total_paid`, `discrepancy`, `rounded_discrepancy`, and `status`.
+* `OrderResponse`: The parent serialization model wrapper returning aggregated order stats and arrays of items/payments.
+
+### 4. `crud.py` (Business Logic & Aggregation joins)
+* `get_unique_orders(db)`: Retrieves unique Order IDs from the transaction table.
+* `get_order_details(db, order_id, order_date, order_status)`:
+  * Pulls itemized lines by joining `order_history` $\rightarrow$ `menu` $\rightarrow$ `categories` $\rightarrow$ `menu_names` to fetch item metadata.
+  * Fetches all split receipts for the order ID.
+  * Runs mathematical validation verifying:
+    $$\sum (\text{Total Paid}) = \text{Amount Due} + \text{Tips} - \text{Discount}$$
+  * Emits discrepancy balances and classifies status as `Match` or `Discrepancy` (discrepancy threshold is set to $< \text{£}0.01$ based on a 2-decimal rounded comparison).
+
 ---
 
 ## ⚡ Setup & Execution Guide
 
-To set up the database and run the FastAPI backend server on your PC:
-
-### 1. Install Dependencies
-Open a terminal (Command Prompt or PowerShell) inside this project directory and install the packages:
-```cmd
+### 1. Prerequisite Installations
+Open a terminal inside this project directory (`python-api/`) and install the python packages:
+```powershell
 pip install -r requirements.txt
 ```
 
-### 2. Auto-Seed the Local SQLite Database
-Run the pre-configured database seeder. This will automatically read `database/schema.sql`, create a local SQLite database file named **`restaurant_pos.db`**, and seed all categories, menu options, 53 orders, and 17 payments instantly:
-```cmd
+### 2. Run Database Seeding
+Create the local SQLite database file `restaurant_pos.db` and seed the tables:
+```powershell
 python seed_db.py
 ```
+*(Prints: "Database seeding completed successfully! 10 SQL statements executed.")*
 
-### 3. Launch the API Server
-Start the Uvicorn dev server:
-```cmd
-uvicorn main:app --reload
+### 3. Run the Backend API
+Launch the FastAPI application:
+```powershell
+python -m uvicorn main:app --reload
 ```
-*The server will boot and run on `http://127.0.0.1:8000`.*
+*(The server will boot and run on `http://127.0.0.1:8000`.)*
 
 ---
 
-## 🔍 API Testing & Verification
+## 🔍 REST API Specification & Endpoint Details
 
-Once the server is running, you can verify the results via:
+### GET `/api/orders`
+Returns the complete list of unique orders with their nested details.
 
-### A. Auto-Generated Swagger Documentation
-Open your web browser and go to:
-👉 **`http://127.0.0.1:8000/docs`** (or `http://127.0.0.1:8000/redoc`)
-* FastAPI provides an interactive UI where you can inspect the request/response models and test the endpoints directly from the browser.
-
-### B. Postman or Curl
-Import and query the GET endpoint to retrieve the nested JSON structure:
-👉 GET **`http://127.0.0.1:8000/api/orders`**
-
-#### Nested JSON API Response Format:
+#### **Response format (JSON)**:
 ```json
 [
   {
@@ -94,7 +126,28 @@ Import and query the GET endpoint to retrieve the nested JSON structure:
         "qty": 1,
         "total": 2.5
       },
-      ...
+      {
+        "id": 2,
+        "item_id": 3,
+        "item_name": "Item3",
+        "category_name": "Soft Drinks",
+        "menu_name": "Drinks",
+        "size": null,
+        "price": 1.5,
+        "qty": 2,
+        "total": 3.0
+      },
+      {
+        "id": 3,
+        "item_id": 1,
+        "item_name": "Item1",
+        "category_name": "Starters",
+        "menu_name": "Food",
+        "size": "Small",
+        "price": 3.75,
+        "qty": 1,
+        "total": 3.75
+      }
     ],
     "payments": [
       {
@@ -114,12 +167,14 @@ Import and query the GET endpoint to retrieve the nested JSON structure:
 
 ---
 
-## 🔍 Task 1: Top Findings Summary (from findings.md)
+## 🔒 Security, Performance & Code Optimizations
 
-1. **Item 5 Menu Mapping Error**: `Item5` belongs to Category `2` (Soft Drinks), which should map to `Menu ID = 2` (Drinks). However, its menu record is mapped to `Menu ID = 1` (Food).
-2. **Missing Auto-Increment ID**: The Order History jumps from ID 39 to ID 41. **ID 40 is missing** in the transaction sequence.
-3. **High Decimal Precision & Price Variations**: Transaction prices are recorded with up to 5 decimal places (e.g., `2.75636`). Actual charged prices differ significantly from base menu pricing, reflecting dynamic pricing or staff overrides.
-4. **Split Bill Payment Verification**: We mathematically validated that the sum of split payments across Cash/Card checks matches the formula:
-   $$\sum (\text{Total Paid}) = \text{Amount Due} + \text{Tips} - \text{Discount}$$
-5. **Overpayment Discrepancy**: Order 20's items sum to **£52.2573** (Amount Due), with no tips or discounts. However, its split payment receipts sum to **£52.28**, creating a **+£0.02** (~2 cents) discrepancy.
-6. **Payment ID Gap**: In the payment log, IDs **112, 113, 114, 117, and 118** are missing from the sequential transaction record.
+### 🛡️ Security Measures
+1. **Parameterized Queries**: All queries compiled by SQLAlchemy ORM generate parameterized SQL queries, completely eliminating SQL Injection risks.
+2. **CORS Middleware Security**: Pre-configured using FastAPI's `CORSMiddleware` restricting headers and routing permissions.
+3. **Input Validation**: Pydantic strictly checks data types during deserialization, preventing buffer or type injection vectors.
+
+### ⚡ Performance Features
+1. **SQLite Connection Optimization**: Multi-threaded database transactions are permitted via `check_same_thread=False` combined with SQLAlchemy Session Local dependency injection.
+2. **Indexing Strategy**: Indexes are created on critical search fields (`order_id`, `item_id`, `payment_id`) to maximize query execution speeds on joins.
+3. **Round Off Logic**: Precise floating-point calculations using Python's decimal routing functions to protect currency conversions.

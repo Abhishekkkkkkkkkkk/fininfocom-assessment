@@ -1,16 +1,34 @@
-# Fullstack Developer Assessment - PHP
-This project provides a comprehensive, production-ready implementation of the Fullstack Restaurant POS assessment in PHP using the **CodeIgniter 4** framework.
+# PHP CodeIgniter 4 Restaurant POS & Cart System
+
+This project provides a comprehensive, production-grade PHP backend and frontend solution for the **Restaurant POS Orders & Cart System** as specified in the Developer Assessment. It leverages **CodeIgniter 4** for the framework, **MySQL** for data storage, and **Vanilla CSS/JS** for the frontend user interface.
 
 ---
 
-## 📂 Project Directory Structure
+## 🛠️ Technical Stack & Architecture
+
+The application implements a clean Model-View-Controller (MVC) pattern:
+* **Controller Layer (`app/Controllers/`)**:
+  * `ApiController`: Extends CodeIgniter’s `ResourceController`. Exposes a REST API delivering aggregated orders and split payments.
+  * `CartController`: Directs the POS cart actions (add, remove, clear, quantity adjustments) using PHP Sessions.
+* **Model Layer (`app/Models/`)**:
+  * `OrderModel`: Connects to `order_history`. Formulates the grouped DISTINCT order searches and structural joins (`order_history` $\rightarrow$ `menu` $\rightarrow$ `categories` $\rightarrow$ `menu_names`).
+  * `PaymentModel`: Connects to `payments` to pull split receipts for specific order IDs.
+  * `ItemModel`: Directs core item lookups.
+* **View Layer (`app/Views/`)**:
+  * `cart_view.php`: A premium Checkout UI designed with Outfit Google Fonts, glassmorphism containers, hover effects, and CSS variables.
+* **Client-Side Preview Layer (`index.html`)**:
+  * A zero-dependency HTML file integrating mock datasets in Javascript. It serves as an instant GUI review tool showcasing both the interactive Cart POS and the API Database Explorer.
+
+---
+
+## 📂 Project Directory Structure & Files Breakdown
 
 ```text
 php-assessment/
 ├── index.html                   <-- Client-side Interactive Cart POS & API Database Explorer (Zero dependencies)
 ├── findings.md                  <-- Task 1: Complete Data & Calculation Findings Report
-├── README.md                    <-- Project guide and setup instructions (This file)
-├── composer.json                <-- Composer dependency configuration
+├── README.md                    <-- Detailed setup, configuration, and running instructions (This file)
+├── composer.json                <-- Composer dependency configurations
 ├── spark                        <-- CodeIgniter 4 CLI spark terminal executable
 ├── public/
 │   └── index.php                <-- Web app entry front controller
@@ -18,46 +36,70 @@ php-assessment/
 │   └── schema.sql               <-- Unified database table structures and pre-seeded data SQL
 └── app/
     ├── Config/
-    │   ├── Paths.php            <-- Core folder directories mapping
+    │   ├── Paths.php            <-- Core folder directories mappings
     │   ├── App.php              <-- Application URLs & locale settings
     │   ├── Autoload.php         <-- Namespaces configuration
-    │   ├── Services.php         <-- Boot service loader
-    │   ├── Constants.php        <-- Global configuration constants
-    │   ├── Security.php         <-- CSRF and cookie protection setup
-    │   ├── Filters.php          <-- HTTP middleware filters
-    │   ├── Logger.php           <-- Error logs threshold config
-    │   ├── Exceptions.php       <-- Framework exceptions logger
     │   ├── Database.php         <-- Database configurations (MySQL & SQLite profiles)
     │   └── Routes.php           <-- Application URL routes mapping (/api/orders, /cart)
     ├── Models/
-    │   ├── ItemModel.php        <-- Relational joins query builder for items
+    │   ├── ItemModel.php        <-- Database model for menu items
     │   ├── OrderModel.php       <-- Relational joins query builder for orders
     │   └── PaymentModel.php     <-- Relational joins query builder for payments
     ├── Controllers/
-    │   ├── ApiController.php    <-- Task 2: REST JSON API Controller (split payments & verification checks)
-    │   └── CartController.php   <-- Task 3: Interactive Cart Controller (sessions)
+    │   ├── ApiController.php    <-- Task 2: REST JSON API Controller (split payments & validations)
+    │   └── CartController.php   <-- Task 3: Interactive Cart Controller (sessions & tax calculations)
     └── Views/
         └── cart_view.php        <-- Task 3: Premium checkout layout (Outfit font, Glassmorphism CSS)
 ```
 
+### 1. `app/Config/Routes.php` (Routing Configuration)
+Defines the URL routing mappings:
+* `GET /api/orders` routes to `ApiController::index` to output the nested JSON data.
+* `GET /cart` routes to `CartController::index` to render the shopping cart view.
+* `GET /cart/add/(:num)` routes to `CartController::add/$1` to add items to the cart.
+* `GET /cart/increase/(:num)` routes to `CartController::increase/$1` to increment item quantities.
+* `GET /cart/decrease/(:num)` routes to `CartController::decrease/$1` to decrement item quantities.
+* `GET /cart/remove/(:num)` routes to `CartController::remove/$1` to remove items.
+* `GET /cart/clear` routes to `CartController::clear` to clear the cart session.
+
+### 2. `ApiController.php` (REST API Endpoint)
+Pulls unique order lines, compiles itemized lists and payments, and runs the audit validation formula:
+* Expected Total Paid is calculated as:
+  $$\text{Expected Total Paid} = \text{Amount Due} + \text{Tips} - \text{Discount}$$
+* Emits a `discrepancy` balance and categorizes verification status.
+* Adds optimization headers: CORS (`Access-Control-Allow-Origin: *`) and caching (`Cache-Control: public, max-age=60`) to maximize API performance under load.
+
+### 3. `CartController.php` (Interactive Cart Controller)
+* Implements checkout logic using CodeIgniter session variables.
+* Computes inclusive 12.5% tax calculations dynamically:
+  $$\text{Tax Amount} = \text{Total Including Tax} \times \left( \frac{12.5}{112.5} \right) = \text{Total Including Tax} \times \left( \frac{1}{9} \right)$$
+  $$\text{Total Excluding Tax} = \text{Total Including Tax} - \text{Tax Amount}$$
+
+### 4. `cart_view.php` (View Template)
+* Designed as a premium checkout interface.
+* Displays available items alongside the live cart.
+* Displays subtotal (excluding tax), inclusive tax amount, and grand total.
+
 ---
 
-## ⚡ Quick Start Options
+## ⚡ Setup & Execution Guide
 
 ### Option A: Instant GUI Preview (No Setup Required)
-You can view the fully completed tasks without database imports or local servers:
-1. Navigate to: `D:\fininfocom task\php-assessment\`
-2. Double-click **`index.html`** to load it inside your web browser.
-3. Switch tabs:
-   * **Task 3: Interactive Cart**: Add items, increase/decrease quantities, filter categories, and observe tax calculations.
-   * **Task 2: API Database Explorer**: Expand rows to view order items, split payments, mathematical checks, and copy the raw nested JSON output.
+You can test the functionality immediately without database installations or local PHP servers:
+1. Open the `php-assessment/` folder in your browser.
+2. Double-click the file **`index.html`** to load the GUI dashboard.
+3. Toggle between tabs:
+   * **Task 3: Interactive Cart POS** (Add items, adjust quantities, view tax).
+   * **Task 2: API Database Explorer** (Inspect unique orders, nested items, split payments, and audit results).
 
-### Option B: Run the PHP CodeIgniter 4 Server
+---
+
+### Option B: Local CodeIgniter 4 Server Setup
 To boot up the live PHP backend, follow these steps:
 
 #### 1. Import Database Schema
-1. Create a MySQL database named **`restaurant_pos`** on your local database system (e.g. phpMyAdmin, XAMPP, or Laragon).
-2. Open your database command tool or GUI panel and import the file: **`database/schema.sql`** to create and seed the tables.
+1. Open MySQL (e.g. phpMyAdmin / XAMPP) and create a database named **`restaurant_pos`**.
+2. Import the file **`database/schema.sql`** to build and seed all tables.
 
 #### 2. Configure Credentials
 1. Open the file: **`app/Config/Database.php`**.
@@ -70,34 +112,35 @@ To boot up the live PHP backend, follow these steps:
    ```
 
 #### 3. Install Vendor Dependencies
-1. Open a Command Prompt or PowerShell terminal inside the project directory:
-   ```cmd
-   cd "D:\fininfocom task\php-assessment"
+1. Open a terminal inside the project directory:
+   ```powershell
+   cd "php-assessment"
    ```
-2. Run composer to install the CodeIgniter 4 system directory:
-   ```cmd
+2. Run composer to install the CodeIgniter 4 core dependencies:
+   ```powershell
    composer install
    ```
 
 #### 4. Run the Dev Server
 1. Boot the server using CodeIgniter's Spark script:
-   ```cmd
+   ```powershell
    php spark serve
    ```
    *The application will boot on `http://localhost:8080`.*
 
 #### 5. Verify the Deliverables
-* **Task 3 (Interactive Cart View)**: Navigate to `http://localhost:8080/cart` to add items to the cart, adjust quantities, view totals, and check the 12.5% inclusive tax calculations.
-* **Task 2 (Orders JSON API)**: Request GET `http://localhost:8080/api/orders` in Postman to retrieve all orders with nested items, split payments, and calculations verification logs.
+* **Task 3 (Interactive Cart View)**: Navigate to `http://localhost:8080/cart`.
+* **Task 2 (Orders JSON API)**: Query `GET http://localhost:8080/api/orders` to retrieve order and payment payloads.
 
 ---
 
-## 🔍 Task 1: Top Findings Summary (from findings.md)
+## 🔒 Security, Performance & Code Optimizations
 
-1. **Menu Relationship Mapping Anomaly**: Item 5 (Item5) belongs to `Cat ID = 2` (Soft Drinks) which is a Drinks menu type (`Menu ID = 2`), but its database record is mapped to `Menu ID = 1` (Food).
-2. **Missing Auto-Increment ID**: The Order History transaction records jump from ID 39 to ID 41. **ID 40 is missing** in the transaction sequence.
-3. **High Decimal Precision & Price Variations**: Transaction log prices are stored with up to 5 decimal places (e.g., `2.75636`). Actual transaction unit prices charged differ significantly from the base menu pricing, reflecting dynamic pricing adjustments.
-4. **Split Bill Payment Verification**: We mathematically validated that the sum of split payments across Cash/Card checks matches the formula:
-   $$\sum (\text{Total Paid}) = \text{Amount Due} + \text{Tips} - \text{Discount}$$
-5. **Overpayment Discrepancy**: Order 20's items sum to **£52.2573** (Amount Due), with no tips or discounts. However, its split payment receipts sum to **£52.28**, creating a **+£0.02** (~2 cents) discrepancy.
-6. **Payment ID Gap**: In the payment log, IDs **112, 113, 114, 117, and 118** are missing from the sequential transaction record.
+### 🛡️ Security Measures
+1. **SQL Injection Prevention**: Uses CodeIgniter 4’s Query Builder, which automatically binds parameters to prevent SQL injection.
+2. **CORS Middleware Security**: Explicit headers are attached to the API controller response to enable secure cross-origin resource requests.
+3. **Session Security**: Session IDs are regenerated automatically upon checkout activities to prevent session fixation.
+
+### ⚡ Performance Features
+1. **HTTP Caching**: The API endpoint responds with `Cache-Control: public, max-age=60` headers, allowing browsers or proxies to cache requests for 60 seconds, reducing database load.
+2. **Indexing**: Primary and foreign keys are explicitly mapped in the SQL schema for quick join query resolution.
