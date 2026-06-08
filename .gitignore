@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+python-api/restaurant_pos.db
+
+# PHP CodeIgniter
+php-assessment/vendor/
+php-assessment/writable/cache/*
+php-assessment/writable/debugbar/*
+php-assessment/writable/session/*
+php-assessment/writable/uploads/*
+!php-assessment/writable/cache/.gitkeep
+!php-assessment/writable/debugbar/.gitkeep
+!php-assessment/writable/session/.gitkeep
+!php-assessment/writable/uploads/.gitkeep
+
+# IDEs and OS
+.idea/
+.vscode/
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store

@@ -1,0 +1,22 @@
+#!/usr/bin/env php
+<?php
+
+// Check PHP version.
+if (version_compare(PHP_VERSION, '8.1', '<')) {
+    echo 'Your PHP version must be 8.1 or higher to run CodeIgniter 4. Current version: ' . PHP_VERSION . "\n";
+    exit(1);
+}
+
+// We want CLI commands to run in the root directory
+chdir(__DIR__);
+
+define('FCPATH', __DIR__ . '/public/');
+
+// Load Paths config
+require __DIR__ . '/app/Config/Paths.php';
+$paths = new Config\Paths();
+
+// Load the framework bootstrap
+require $paths->systemDirectory . '/Boot.php';
+
+exit(CodeIgniter\Boot::bootSpark($paths));
